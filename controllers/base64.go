@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/otiai10/gosseract/v2"
@@ -24,6 +25,7 @@ func Base64(w http.ResponseWriter, r *http.Request) {
 		Trim      string `json:"trim"`
 		Languages string `json:"languages"`
 		Whitelist string `json:"whitelist"`
+		PSM       string `json:"psm"`
 	})
 
 	err := json.NewDecoder(r.Body).Decode(body)
@@ -64,6 +66,22 @@ func Base64(w http.ResponseWriter, r *http.Request) {
 	client.SetImage(tempfile.Name())
 	if body.Whitelist != "" {
 		client.SetWhitelist(body.Whitelist)
+	}
+
+	if body.PSM != "" {
+		psm, err := strconv.Atoi(body.PSM)
+		if err != nil {
+			render.JSON(http.StatusBadRequest, "psm is not a number")
+			return
+		}
+
+		if psm < 0 || psm > 13 {
+			render.JSON(http.StatusBadRequest, "psm is out of range，please enter a number between 0 and 13")
+			return
+		}
+
+		fmt.Printf("set psm %d\n", psm)
+		client.SetVariable("tessedit_pageseg_mode", body.PSM) // client.SetPageSegMode(psm) not working
 	}
 
 	text, err := client.Text()

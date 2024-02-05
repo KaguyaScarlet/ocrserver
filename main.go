@@ -35,6 +35,7 @@ func main() {
 		logger.Fatalln("Required env `PORT` is not specified.")
 	}
 	logger.Printf("listening on port %s", port)
+
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		logger.Println(err)
 	}

@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm
 LABEL maintainer="otiai10 <otiai10@gmail.com>"
 
 ARG LOAD_LANG=jpn
@@ -6,9 +6,10 @@ ARG LOAD_LANG=jpn
 RUN apt update \
     && apt install -y \
       ca-certificates \
-      libtesseract-dev=4.1.1-2.1 \
-      tesseract-ocr=4.1.1-2.1 \
-      golang=2:1.15~1
+      libtesseract5 \
+      libtesseract-dev \
+      tesseract-ocr \
+      golang
 
 ENV GO111MODULE=on
 ENV GOPATH=${HOME}/go
@@ -20,6 +21,8 @@ RUN go get -v ./... && go install .
 
 # Load languages
 RUN if [ -n "${LOAD_LANG}" ]; then apt-get install -y tesseract-ocr-${LOAD_LANG}; fi
+
+COPY tessdata/ticketplusV5.traineddata /usr/share/tesseract-ocr/5/tessdata/ticketplusV5.traineddata
 
 ENV PORT=8080
 CMD ["ocrserver"]

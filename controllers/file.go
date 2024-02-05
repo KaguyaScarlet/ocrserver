@@ -1,11 +1,12 @@
 package controllers
 
 import (
+	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/otiai10/gosseract/v2"
@@ -32,7 +33,7 @@ func FileUpload(w http.ResponseWriter, r *http.Request) {
 	defer upload.Close()
 
 	// Create physical file
-	tempfile, err := ioutil.TempFile("", "ocrserver"+"-")
+	tempfile, err := os.CreateTemp("", "ocrserver"+"-")
 	if err != nil {
 		render.JSON(http.StatusBadRequest, err)
 		return
@@ -50,6 +51,22 @@ func FileUpload(w http.ResponseWriter, r *http.Request) {
 
 	client := gosseract.NewClient()
 	defer client.Close()
+
+	if psmStr := r.FormValue("psm"); psmStr != "" {
+		psm, err := strconv.Atoi(psmStr)
+		if err != nil {
+			render.JSON(http.StatusBadRequest, "psm is not a number")
+			return
+		}
+
+		if psm < 0 || psm > 13 {
+			render.JSON(http.StatusBadRequest, "psm is out of range，please enter a number between 0 and 13")
+			return
+		}
+
+		fmt.Printf("set psm %d\n", psm)
+		client.SetVariable("tessedit_pageseg_mode", psmStr) // client.SetPageSegMode(psm) not working
+	}
 
 	client.SetImage(tempfile.Name())
 	client.Languages = []string{"eng"}
